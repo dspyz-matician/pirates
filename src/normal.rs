@@ -14,15 +14,15 @@ pub enum NormalPiratesTree {
         num_bucaneers: usize,
     },
 }
-impl NormalPiratesTree {
-    pub fn len(&self) -> usize {
+impl PiratesTreeInner for NormalPiratesTree {
+    fn len(&self) -> usize {
         match self {
             Self::SinglePirate(_) => 1,
             Self::Join { size, .. } => *size,
         }
     }
 
-    pub fn num_bucaneers(&self) -> usize {
+    fn num_bucaneers(&self) -> usize {
         match self {
             Self::SinglePirate(Pirate::Bucaneer) => 1,
             Self::SinglePirate(Pirate::Barbary) => 0,
@@ -30,16 +30,14 @@ impl NormalPiratesTree {
         }
     }
 
-    pub fn unpack(&self) -> Option<(PiratesTree, PiratesTree)> {
+    fn unpack(&self) -> Option<(PiratesTree, PiratesTree)> {
         match self {
             Self::SinglePirate(_) => None,
             Self::Join { left, right, .. } => Some((left.clone(), right.clone())),
         }
     }
 
-    pub fn flipped(&self) -> PiratesTree {
-        PiratesTree::new(PiratesTreeInner::Flipped(FlippedPiratesTree::flip(
-            self.clone(),
-        )))
+    fn flipped(&self) -> PiratesTree {
+        PiratesTree::new(FlippedPiratesTree::flip(self.clone()))
     }
 }

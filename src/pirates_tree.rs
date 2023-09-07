@@ -1,43 +1,16 @@
 use std::{cmp::Ordering, ops::RangeInclusive, rc::Rc};
 
-use crate::{
-    append::Append, flipped::FlippedPiratesTree, normal::NormalPiratesTree, pirate::Pirate,
-};
+use crate::{append::Append, normal::NormalPiratesTree, pirate::Pirate};
 
-pub enum PiratesTreeInner {
-    Normal(NormalPiratesTree),
-    Flipped(FlippedPiratesTree),
-}
-
-impl PiratesTreeInner {
-    fn len(&self) -> usize {
-        match self {
-            Self::Normal(tree) => tree.len(),
-            Self::Flipped(tree) => tree.len(),
-        }
-    }
-    fn num_bucaneers(&self) -> usize {
-        match self {
-            Self::Normal(tree) => tree.num_bucaneers(),
-            Self::Flipped(tree) => tree.num_bucaneers(),
-        }
-    }
-    fn unpack(&self) -> Option<(PiratesTree, PiratesTree)> {
-        match self {
-            Self::Normal(tree) => tree.unpack(),
-            Self::Flipped(tree) => tree.unpack(),
-        }
-    }
-    fn flipped(&self) -> PiratesTree {
-        match self {
-            Self::Normal(tree) => tree.flipped(),
-            Self::Flipped(tree) => tree.flipped(),
-        }
-    }
+pub trait PiratesTreeInner {
+    fn len(&self) -> usize;
+    fn num_bucaneers(&self) -> usize;
+    fn unpack(&self) -> Option<(PiratesTree, PiratesTree)>;
+    fn flipped(&self) -> PiratesTree;
 }
 
 #[derive(Clone)]
-pub struct PiratesTree(Rc<PiratesTreeInner>);
+pub struct PiratesTree(Rc<dyn PiratesTreeInner>);
 
 impl PiratesTree {
     pub fn from_string(string: &str) -> Self {
@@ -65,12 +38,12 @@ impl PiratesTree {
     pub fn join(left_pirates: PiratesTree, right_pirates: PiratesTree) -> Self {
         let size = left_pirates.len() + right_pirates.len();
         let num_bucaneers = left_pirates.num_bucaneers() + right_pirates.num_bucaneers();
-        Self(Rc::new(PiratesTreeInner::Normal(NormalPiratesTree::Join {
+        Self(Rc::new(NormalPiratesTree::Join {
             left: left_pirates,
             right: right_pirates,
             size,
             num_bucaneers,
-        })))
+        }))
     }
 
     pub fn replicate(&self, n: usize) -> Self {
@@ -159,16 +132,14 @@ impl PiratesTree {
     }
 
     fn single_pirate(pirate: Pirate) -> PiratesTree {
-        PiratesTree(Rc::new(PiratesTreeInner::Normal(
-            NormalPiratesTree::SinglePirate(pirate),
-        )))
+        PiratesTree(Rc::new(NormalPiratesTree::SinglePirate(pirate)))
     }
 
     fn unpack(&self) -> Option<(PiratesTree, PiratesTree)> {
         self.0.unpack()
     }
 
-    pub(crate) fn new(t: PiratesTreeInner) -> PiratesTree {
+    pub(crate) fn new(t: impl PiratesTreeInner + 'static) -> PiratesTree {
         PiratesTree(Rc::new(t))
     }
 }
